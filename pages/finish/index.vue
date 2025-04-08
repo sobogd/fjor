@@ -1,0 +1,3 @@
+<template>
+  <FinishScreen />
+</template>
