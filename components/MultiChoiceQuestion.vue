@@ -3,9 +3,9 @@
     <HeaderComponent :text="title.text" :classes="title.classes" />
     <ListComponent :on-select="handleSelect" :options="options" />
     <FooterComponent
-      :on-click-next="() => navigate('next')"
-      :on-click-prev="() => navigate('prev')"
       :disabled-next="disabled"
+      @click-next="navigate('next')"
+      @click-prev="navigate('prev')"
     />
   </ContainerComponent>
 </template>
@@ -17,24 +17,29 @@ import ContainerComponent from "~/components/ContainerComponent.vue";
 import HeaderComponent from "~/components/HeaderComponent.vue";
 import FooterComponent from "~/components/FooterComponent.vue";
 import ListComponent from "~/components/ListComponent.vue";
+import { computed, ref } from "vue";
 
-const { onSelect, options: initialOptions, navigate, title } = useFunnelStore();
+const funnelStore = useFunnelStore();
+const { onSelect, options: initialOptions, navigate, title } = funnelStore;
 
 const options = ref(initialOptions);
-const disabled = ref(initialOptions.every((option) => !option.selected));
+const disabled = computed(() =>
+  options.value.every((option) => !option.selected),
+);
 
 const handleSelect = (selectedOption: Option) => {
   options.value = options.value.map((option) => ({
     ...option,
     selected:
-      selectedOption.value === option.value
+      option.value === selectedOption.value
         ? !option.selected
         : option.selected,
   }));
-  disabled.value = false;
+
   const selectedOptions = options.value
     .filter((option) => option.selected)
     .map((option) => option.value);
+
   onSelect(selectedOptions);
 };
 </script>

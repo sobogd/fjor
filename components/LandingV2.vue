@@ -1,10 +1,7 @@
 <template>
   <ContainerComponent>
     <HeaderComponent :text="title.text" :classes="title.classes" />
-    <FooterComponent
-      :on-click-next="() => navigate('next')"
-      :show-prev="false"
-    />
+    <FooterComponent :on-click-next="navigateToNext" :show-prev="false" />
   </ContainerComponent>
 </template>
 
@@ -16,4 +13,8 @@ import HeaderComponent from "~/components/HeaderComponent.vue";
 import FooterComponent from "~/components/FooterComponent.vue";
 
 const { navigate, title } = useFunnelStore();
+
+function navigateToNext() {
+  navigate("next");
+}
 </script>

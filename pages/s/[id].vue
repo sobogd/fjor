@@ -1,6 +1,6 @@
 <template>
   <div>
-    <component :is="funnel.component" />
+    <component :is="component" />
   </div>
 </template>
 
@@ -8,4 +8,5 @@
 import { useFunnelStore } from "~/stores/funnel";
 
 const funnel = useFunnelStore();
+const component = funnel.component.value;
 </script>

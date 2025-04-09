@@ -1,5 +1,5 @@
 <template>
-  <h1 class="text-2xl w-full text-left" :class="classes">
+  <h1 v-if="text" class="text-2xl w-full text-left" :class="classes">
     {{ text }}
   </h1>
 </template>
@@ -8,12 +8,10 @@
 defineProps({
   classes: {
     type: String,
-    required: false,
     default: "",
   },
   text: {
     type: String,
-    required: false,
     default: "",
   },
 });

@@ -10,118 +10,96 @@ import { getInitialScreenId } from "~/utils/getInitialScreenId";
 import { FIRST_SCREEN_INDEX } from "~/constants/common";
 import type { Chooses } from "~/types/chooses";
 import { getInitialChooses } from "~/utils/getInitialChooses";
+import { initialState } from "~/constants/state";
 
 export function useFunnelStore() {
-  const funnel = ref<Funnel | null>(null);
+  const state = reactive(initialState);
+
   const funnelCookie = useCookie<Funnel | null>(COOKIE_FUNNEL_TYPE);
-
-  function initializeFunnel() {
-    if (!unref(funnelCookie)) {
-      const initialFunnel = getInitialFunnel();
-      funnelCookie.value = initialFunnel;
-      funnel.value = initialFunnel;
-    } else {
-      funnel.value = unref(funnelCookie);
-    }
-  }
-
-  initializeFunnel();
-
-  const chooses = ref<Chooses>({});
   const choosesCookie = useCookie<Chooses>(COOKIE_CHOOSES);
-
-  function initializeChooses() {
-    if (!unref(choosesCookie)) {
-      const initialChooses = getInitialChooses();
-      choosesCookie.value = initialChooses;
-      chooses.value = initialChooses;
-    } else {
-      chooses.value = unref(choosesCookie);
-    }
-  }
-
-  initializeChooses();
-
-  const screenId = ref<string>(FIRST_SCREEN_INDEX);
   const screenIdCookie = useCookie<string>(COOKIE_SCREEN_ID);
 
-  function initializeScreenId() {
-    if (!unref(screenIdCookie)) {
-      const initialFunnelScreenId = getInitialScreenId();
-      screenIdCookie.value = initialFunnelScreenId;
-      screenId.value = initialFunnelScreenId;
-    } else {
-      screenId.value = unref(screenIdCookie);
-    }
-  }
+  const initializeFunnel = () => {
+    const storedFunnel = unref(funnelCookie);
+    state.funnel = storedFunnel || getInitialFunnel();
+    if (!storedFunnel) funnelCookie.value = state.funnel;
+  };
 
+  const initializeChooses = () => {
+    const storedChooses = unref(choosesCookie);
+    state.chooses = storedChooses || getInitialChooses();
+    if (!storedChooses) choosesCookie.value = state.chooses;
+  };
+
+  const initializeScreenId = () => {
+    const storedScreenId = unref(screenIdCookie);
+    state.screenId = storedScreenId || getInitialScreenId();
+    if (!storedScreenId) screenIdCookie.value = state.screenId;
+  };
+
+  initializeFunnel();
+  initializeChooses();
   initializeScreenId();
 
-  if (!unref(funnel)) {
-    funnel.value = getInitialFunnel();
-  }
-
   const getCurrentConfig = () => {
-    if (!funnel.value) throw new Error();
-    return getConfigByType(funnel.value);
+    if (!state.funnel) throw new Error("Funnel type is not defined.");
+    return getConfigByType(state.funnel);
   };
 
   const activeScreen = computed(() => {
     const currentConfig = getCurrentConfig();
-    return currentConfig.screens.find((s) => s.id === screenId.value);
+    return currentConfig.screens.find((screen) => screen.id === state.screenId);
   });
-
-  const reset = () => {
-    screenIdCookie.value = FIRST_SCREEN_INDEX;
-    funnelCookie.value = null;
-    choosesCookie.value = {};
-  };
 
   const navigate = (type: "prev" | "next") => {
     const config = getCurrentConfig();
-    const oldIndex = config.screens.findIndex((s) => s.id === screenId.value);
-    const newIndex = oldIndex - (type === "prev" ? 1 : -1);
+    const currentIndex = config.screens.findIndex(
+      (screen) => screen.id === state.screenId,
+    );
+    const newIndex = currentIndex + (type === "prev" ? -1 : 1);
+
     if (config.screens[newIndex]) {
-      const newId = config.screens[newIndex].id;
-      screenId.value = newId;
-      const activeIdCookie = useCookie<string>(COOKIE_SCREEN_ID);
-      activeIdCookie.value = newId;
-      navigateTo("/s/" + newId);
+      state.screenId = config.screens[newIndex].id;
+      screenIdCookie.value = state.screenId;
+      navigateTo(`/s/${state.screenId}`);
     } else {
-      reset();
+      Object.assign(state, initialState);
+      screenIdCookie.value = FIRST_SCREEN_INDEX;
+      choosesCookie.value = {};
       navigateTo("/finish");
     }
   };
 
-  const title = computed(() => {
-    return activeScreen.value?.props?.title ?? { text: "No title" };
-  });
+  const title = computed(
+    () => activeScreen.value?.props?.title ?? { text: "No title" },
+  );
 
-  const component = computed(() => {
-    return activeScreen.value?.component ?? "Not Found";
-  });
+  const component = computed(
+    () => activeScreen.value?.component ?? "Not Found",
+  );
 
   const onSelect = (values: string[]) => {
-    chooses.value = {
-      ...chooses.value,
-      [screenId.value]: values,
+    state.chooses = {
+      ...state.chooses,
+      [state.screenId]: values,
     };
-    choosesCookie.value = chooses.value;
+    choosesCookie.value = state.chooses;
   };
 
   const options = computed(
     () =>
       activeScreen.value?.props?.options?.map((option) => ({
         ...option,
-        selected: !!chooses.value?.[screenId.value]?.includes(option.value),
+        selected:
+          state.chooses?.[state.screenId]?.includes(option.value) ?? false,
       })) ?? [],
   );
 
   return {
-    title: title.value,
-    component: component.value,
+    title,
+    component,
     options: options.value,
-    chooses,
+    chooses: state.chooses,
     navigate,
     onSelect,
   };

@@ -1,12 +1,18 @@
 <template>
-  <ul class="w-full flex flex-col gap-3">
-    <ButtonComponent
+  <ul class="w-full flex flex-col gap-3" role="list">
+    <li
       v-for="option in options"
       :key="option.value"
-      :title="option.title"
-      :variant="option.selected ? 'contained' : 'outlined'"
-      :on-click="() => onSelect(option)"
-    />
+      class="flex w-full justify-stretch items-stretch"
+      role="listitem"
+    >
+      <ButtonComponent
+        :title="option.title"
+        :variant="option.selected ? 'contained' : 'outlined'"
+        :full-width="true"
+        @click="() => onSelect(option)"
+      />
+    </li>
   </ul>
 </template>
 
@@ -18,6 +24,12 @@ defineProps({
   options: {
     type: Array as PropType<Option[]>,
     required: true,
+    validator: (value: Option[]) =>
+      Array.isArray(value) &&
+      value.every(
+        (option) =>
+          "value" in option && "title" in option && "selected" in option,
+      ),
   },
   onSelect: {
     type: Function as PropType<(option: Option) => void>,
